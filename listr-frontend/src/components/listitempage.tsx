@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  createListItem,
-  database,
-  type ListItemEntry,
-  deleteListItem,
-  type ListEntry,
-} from "../store/database";
+import { type ListItemEntry, type ListEntry } from "../store/types";
 import { useLocation, useNavigate } from "react-router";
 import {
   Container,
@@ -17,6 +11,9 @@ import {
   Checkbox,
   Modal,
 } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import IconButton from "@mui/material/IconButton";
+import CheckIcon from "@mui/icons-material/Check";
 
 export const ListItemPage: React.FC = () => {
   const [items, setItems] = useState<ListItemEntry[]>([]);
@@ -24,7 +21,9 @@ export const ListItemPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setItems(database.items.filter((entry) => entry.listId === state.id));
+    fetch(`http://localhost:3000/lists/${state.id}/items`)
+      .then((response) => response.json())
+      .then((data) => setItems(data));
   }, []);
 
   const [text, setText] = useState<string>("");
@@ -36,14 +35,24 @@ export const ListItemPage: React.FC = () => {
     if (text === "" || text === undefined) {
       return;
     }
-    const newEntry: ListItemEntry = createListItem(text, state.id);
-    setItems((prev) => [...prev, newEntry]);
-    setText("");
+    fetch(`http://localhost:3000/lists/${state.id}/items`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ value: text }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setItems((prev) => [...prev, data]);
+        setText("");
+      });
   };
 
   const [checked, setChecked] = useState<number[]>([]);
   const handleCheckboxToggle =
-    (value: number) => (_event: React.ChangeEvent<HTMLInputElement>, _checked: boolean) => {
+    (value: number) =>
+    (_event: React.ChangeEvent<HTMLInputElement>, _checked: boolean) => {
       const currentIndex = checked.indexOf(value);
       const newChecked = [...checked];
 
@@ -59,13 +68,42 @@ export const ListItemPage: React.FC = () => {
   }, [checked]);
 
   const [modalopen, setModalOpen] = useState<boolean>(false);
+
   const handleDelete = () => {
-    for (let i = 0; i <= checked.length; i++) {
-      deleteListItem(checked[i]);
-    }
+    checked.forEach((itemId) => {
+      fetch(`http://localhost:3000/lists/${state.id}/items/${itemId}`, {
+        method: "DELETE",
+      });
+    });
+
     setItems((prev) => prev.filter((entry) => !checked.includes(entry.id)));
+
     setChecked([]);
     setModalOpen(true);
+  };
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState<string>("");
+
+  const handleEdit = (itemId: number) => {
+    fetch(`http://localhost:3000/lists/${state.id}/items/${itemId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ value: editText }),
+    })
+      .then((response) => response.json())
+      .then(() => {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId ? { ...item, value: editText } : item,
+          ),
+        );
+
+        setEditingId(null);
+        setEditText("");
+      });
   };
 
   return (
@@ -96,7 +134,34 @@ export const ListItemPage: React.FC = () => {
                 checked={checked.includes(entry.id)}
                 onChange={handleCheckboxToggle(entry.id)}
               />
-              <label htmlFor={entry.value}>{entry.value}</label>
+
+              {editingId === entry.id ? (
+                <TextField
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                />
+              ) : (
+                entry.value
+              )}
+
+              {editingId === entry.id ? (
+                <IconButton
+                  aria-label="save"
+                  onClick={() => handleEdit(entry.id)}
+                >
+                  <CheckIcon />
+                </IconButton>
+              ) : (
+                <IconButton
+                  aria-label="edit"
+                  onClick={() => {
+                    setEditingId(entry.id);
+                    setEditText(entry.value);
+                  }}
+                >
+                  <EditIcon />
+                </IconButton>
+              )}
             </Box>
           ))}
         </List>

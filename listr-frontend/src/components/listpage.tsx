@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import type { ListEntry } from "../store/database";
+import type { ListEntry } from "../store/types";
 import { useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Container,
   Box,
@@ -13,7 +13,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import FolderIcon from "@mui/icons-material/Folder";
+import ListAltOutlinedIcon from "@mui/icons-material/ListAltOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
@@ -89,38 +89,58 @@ export const Listpage: React.FC = () => {
       });
   };
 
+  const navigate = useNavigate();
+
   return (
-    <Container>
+    <Container className="page-container">
       <Typography
         sx={{
           fontSize: 20,
           fontWeight: "bold",
-          alignContent: "center",
+          letterSpacing: "0.2px",
+          textShadow: "1px 2px 3px rgba(107, 70, 54, 0.2)",
         }}
       >
         WELCOME TO LISTR
       </Typography>
       <Box>
-        <List>
+        <List className="list-container">
           {lists.map((entry) => {
             return (
               <ListItem
                 key={entry.id}
+                onClick={() => navigate("/listitems", { state: entry })}
                 secondaryAction={
                   <>
                     {editingId === entry.id ? (
                       <IconButton
                         aria-label="save"
-                        onClick={() => handleEdit(entry.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(entry.id);
+                        }}
+                        sx={{
+                          color: "#6b4636",
+                          "&:hover": {
+                            backgroundColor: "#fcfad4",
+                          },
+                        }}
                       >
                         <CheckIcon />
                       </IconButton>
                     ) : (
                       <IconButton
                         aria-label="edit"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setEditingId(entry.id);
                           setEditText(entry.name);
+                        }}
+                        sx={{
+                          color: "#6b4636",
+                          "&:hover": {
+                            backgroundColor: "#fcfad4",
+                          },
                         }}
                       >
                         <EditIcon />
@@ -130,30 +150,53 @@ export const Listpage: React.FC = () => {
                     <IconButton
                       edge="end"
                       aria-label="delete"
-                      onClick={() => handleDelete(entry.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(entry.id);
+                      }}
+                      sx={{
+                        color: "#6b4636",
+                        "&:hover": {
+                          backgroundColor: "#fcfad4",
+                        },
+                      }}
                     >
                       <DeleteIcon />
                     </IconButton>
                   </>
                 }
               >
-                <ListItemAvatar>
-                  <Avatar>
-                    <FolderIcon />
-                  </Avatar>
-                </ListItemAvatar>
-                {editingId === entry.id ? (
-                  <TextField
-                    value={editText}
-                    onChange={(e) => {
-                      setEditText(e.target.value);
-                    }}
-                  />
-                ) : (
-                  <Link to="/listitems" state={entry}>
-                    {entry.name}
-                  </Link>
-                )}
+                <Box className="list-card-content">
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: "#fcfad4" }}>
+                      <ListAltOutlinedIcon className="list-icon" />
+                    </Avatar>
+                  </ListItemAvatar>
+                  {editingId === entry.id ? (
+                    <TextField
+                      value={editText}
+                      onChange={(e) => {
+                        setEditText(e.target.value);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <Typography
+                      sx={{
+                        fontSize: 20,
+                        fontWeight: "bold",
+                        letterSpacing: "0.2px",
+                      }}
+                    >
+                      {entry.name}
+                    </Typography>
+                  )}
+                  <Box className="list-item-count">
+                    {entry.itemCount === 1
+                      ? "1 item"
+                      : `${entry.itemCount} items`}
+                  </Box>
+                </Box>
               </ListItem>
             );
           })}
@@ -163,6 +206,7 @@ export const Listpage: React.FC = () => {
           variant="outlined"
           value={text}
           onChange={handleText}
+          sx={{ margin: "5px" }}
         />
         <Button variant="outlined" onClick={handleSubmit}>
           Submit

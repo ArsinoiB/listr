@@ -1,9 +1,16 @@
 import db from "./database.js";
 
 export function getLists() {
-  return db.prepare("SELECT * FROM lists").all();
+  return db
+    .prepare(
+      `SELECT lists.id, lists.name, COUNT(list_items.id) AS itemCount
+    FROM lists
+    LEFT JOIN list_items
+      ON lists.id = list_items.list_id
+    GROUP BY lists.id`,
+    )
+    .all();
 }
-
 export function getListById(id: string) {
   return db.prepare("SELECT * FROM lists WHERE id = ?").get(id);
 }
