@@ -14,6 +14,8 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import IconButton from "@mui/material/IconButton";
 import CheckIcon from "@mui/icons-material/Check";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 export const ListItemPage: React.FC = () => {
   const [items, setItems] = useState<ListItemEntry[]>([]);
@@ -107,13 +109,12 @@ export const ListItemPage: React.FC = () => {
   };
 
   return (
-    <Container>
+    <Container className="page-container">
       <Box>
         <Typography
           sx={{
             fontSize: 20,
             fontWeight: "bold",
-            alignContent: "center",
           }}
         >
           {state.name}
@@ -122,14 +123,7 @@ export const ListItemPage: React.FC = () => {
         <br />
         <List>
           {items.map((entry) => (
-            <Box
-              key={entry.id}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-              }}
-            >
+            <Box key={entry.id} className="item-bubble">
               <Checkbox
                 checked={checked.includes(entry.id)}
                 onChange={handleCheckboxToggle(entry.id)}
@@ -167,23 +161,41 @@ export const ListItemPage: React.FC = () => {
         </List>
       </Box>
       <br />
-      <Box>
-        <TextField
-          label="Add Item"
-          variant="outlined"
-          name="newItems"
-          value={text}
-          onChange={handleText}
-        />
-        <Button variant="outlined" onClick={handleSubmit}>
-          +
-        </Button>
-        <Button variant="outlined" onClick={handleDelete} disabled={disabled}>
-          -
-        </Button>
+      <Box className="item-actions">
+        <Box className="add-item-controls">
+          <TextField
+            label="Add Item"
+            variant="outlined"
+            name="newItems"
+            value={text}
+            onChange={handleText}
+          />
+          <Button
+            variant="outlined"
+            onClick={handleSubmit}
+            sx={{
+              color: "#6b4636",
+              borderColor: "#6b4636",
+              borderRadius: "12px",
+              "&:hover": {
+                backgroundColor: "#fcfad4",
+                borderColor: "#6b4636",
+              },
+            }}
+          >
+            <AddIcon />
+          </Button>
+        </Box>
+        <Box className="delete-item-controls">
+          <Button variant="outlined" onClick={handleDelete} disabled={disabled}>
+            Delete Selected:
+            <DeleteOutlineIcon />
+          </Button>
+        </Box>
       </Box>
       <br />
       <Box
+        className="back-button-container"
         sx={{
           display: "flex",
           alignItems: "left",
@@ -208,10 +220,10 @@ export const ListItemPage: React.FC = () => {
             transform: "translate(-50%, -50%)",
             width: 300,
             height: 200,
-            bgcolor: "white",
-            border: "2px solid black",
-            boxShadow: 24,
-            borderRadius: 2,
+            bgcolor: "#fff0b8",
+            border: "2px solid #6b4636",
+            boxShadow: "0 8px 24px rgba(107, 70, 54, 0.25)",
+            borderRadius: 4,
             p: 2,
             display: "flex",
             flexDirection: "column",
@@ -228,9 +240,11 @@ export const ListItemPage: React.FC = () => {
               right: 8,
               minWidth: "auto",
               padding: "4px 8px",
-              bgcolor: "red",
-              color: "white",
-              "&:hover": { bgcolor: "darkred" },
+              bgcolor: "#6b4636",
+              color: "#f8e7a1",
+              "&:hover": {
+                bgcolor: "#54372b",
+              },
               borderRadius: 2,
             }}
           >

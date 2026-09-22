@@ -84,3 +84,39 @@ body {
   font-size: 14px;
   opacity: 0.75;
 }
+
+.item-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: fit-content;
+  border: 2px solid #6b4636;
+  border-radius: 20px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background-color: #fff0b8;
+  box-shadow: 0 3px 8px rgba(107, 70, 54, 0.15);
+}
+
+.add-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-item-controls {
+  margin-top: 10px;
+  color: "#513a24 ";
+}
+
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.back-button-container {
+  margin-top: 40px;
+}
