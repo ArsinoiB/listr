@@ -17,40 +17,72 @@ import CheckIcon from "@mui/icons-material/Check";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export const ListItemPage: React.FC = () => {
   const [items, setItems] = useState<ListItemEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const state: ListEntry = useLocation().state;
   const navigate = useNavigate();
 
+  //Fetch the items in the list
   useEffect(() => {
-    fetch(`http://localhost:3000/lists/${state.id}/items`)
-      .then((response) => response.json())
-      .then((data) => setItems(data));
+    fetch(`${API_URL}/lists/${state.id}/items`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch items");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setItems(data);
+        setError(null);
+      })
+      .catch(() => {
+        setError("Could not load items");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const [text, setText] = useState<string>("");
   const handleText = (e: React.ChangeEvent<HTMLInputElement>) => {
     setText(e.target.value);
   };
+
+  // Add an item to the list
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (text === "" || text === undefined) {
       return;
     }
-    fetch(`http://localhost:3000/lists/${state.id}/items`, {
+    fetch(`${API_URL}/lists/${state.id}/items`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ value: text }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to create item");
+        }
+
+        return response.json();
+      })
       .then((data) => {
         setItems((prev) => [...prev, data]);
         setText("");
+        setError(null);
+      })
+      .catch(() => {
+        setError("Could not create item");
       });
   };
 
+  //Check state for deletion
   const [checked, setChecked] = useState<number[]>([]);
   const handleCheckboxToggle =
     (value: number) =>
@@ -64,38 +96,58 @@ export const ListItemPage: React.FC = () => {
       setChecked(newChecked);
     };
 
+  //Disable deletion button if nothing is checked
   const [disabled, setDisabled] = useState<boolean>(true);
   useEffect(() => {
     setDisabled(checked.length === 0);
   }, [checked]);
 
+  //State for deletion modal opening
   const [modalopen, setModalOpen] = useState<boolean>(false);
 
-  const handleDelete = () => {
-    checked.forEach((itemId) => {
-      fetch(`http://localhost:3000/lists/${state.id}/items/${itemId}`, {
-        method: "DELETE",
-      });
-    });
+  //Delete an item
+  const handleDelete = async () => {
+    try {
+      await Promise.all(
+        checked.map((itemId) =>
+          fetch(`${API_URL}/lists/${state.id}/items/${itemId}`, {
+            method: "DELETE",
+          }).then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to delete item");
+            }
+          }),
+        ),
+      );
 
-    setItems((prev) => prev.filter((entry) => !checked.includes(entry.id)));
+      setItems((prev) => prev.filter((entry) => !checked.includes(entry.id)));
 
-    setChecked([]);
-    setModalOpen(true);
+      setChecked([]);
+      setModalOpen(true);
+      setError(null);
+    } catch {
+      setError("Could not delete item(s)");
+    }
   };
-
+  //State for item edit
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState<string>("");
 
+  //Edit item
   const handleEdit = (itemId: number) => {
-    fetch(`http://localhost:3000/lists/${state.id}/items/${itemId}`, {
+    fetch(`${API_URL}/lists/${state.id}/items/${itemId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ value: editText }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to edit item");
+        }
+        return response.json();
+      })
       .then(() => {
         setItems((prev) =>
           prev.map((item) =>
@@ -105,6 +157,10 @@ export const ListItemPage: React.FC = () => {
 
         setEditingId(null);
         setEditText("");
+        setError(null);
+      })
+      .catch(() => {
+        setError("Could not edit item");
       });
   };
 
@@ -121,44 +177,49 @@ export const ListItemPage: React.FC = () => {
         </Typography>
         <br />
         <br />
-        <List>
-          {items.map((entry) => (
-            <Box key={entry.id} className="item-bubble">
-              <Checkbox
-                checked={checked.includes(entry.id)}
-                onChange={handleCheckboxToggle(entry.id)}
-              />
-
-              {editingId === entry.id ? (
-                <TextField
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
+        {error && <Typography>{error}</Typography>}
+        {loading ? (
+          <Typography>Loading...</Typography>
+        ) : (
+          <List>
+            {items.map((entry) => (
+              <Box key={entry.id} className="item-bubble">
+                <Checkbox
+                  checked={checked.includes(entry.id)}
+                  onChange={handleCheckboxToggle(entry.id)}
                 />
-              ) : (
-                entry.value
-              )}
 
-              {editingId === entry.id ? (
-                <IconButton
-                  aria-label="save"
-                  onClick={() => handleEdit(entry.id)}
-                >
-                  <CheckIcon />
-                </IconButton>
-              ) : (
-                <IconButton
-                  aria-label="edit"
-                  onClick={() => {
-                    setEditingId(entry.id);
-                    setEditText(entry.value);
-                  }}
-                >
-                  <EditIcon />
-                </IconButton>
-              )}
-            </Box>
-          ))}
-        </List>
+                {editingId === entry.id ? (
+                  <TextField
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
+                ) : (
+                  entry.value
+                )}
+
+                {editingId === entry.id ? (
+                  <IconButton
+                    aria-label="save"
+                    onClick={() => handleEdit(entry.id)}
+                  >
+                    <CheckIcon />
+                  </IconButton>
+                ) : (
+                  <IconButton
+                    aria-label="edit"
+                    onClick={() => {
+                      setEditingId(entry.id);
+                      setEditText(entry.value);
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                )}
+              </Box>
+            ))}
+          </List>
+        )}
       </Box>
       <br />
       <Box className="item-actions">

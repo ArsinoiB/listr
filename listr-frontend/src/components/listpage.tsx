@@ -19,14 +19,32 @@ import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export const Listpage: React.FC = () => {
   const [lists, setLists] = useState<ListEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Fetch the lists from the backend API when the component mounts
   useEffect(() => {
-    fetch("http://localhost:3000/lists")
-      .then((response) => response.json())
-      .then((data) => setLists(data));
+    fetch(`${API_URL}/lists`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch lists");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setLists(data);
+        setError(null);
+      })
+      .catch(() => {
+        setError("Could not load lists");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   // State and handler for the new list input
@@ -42,41 +60,64 @@ export const Listpage: React.FC = () => {
   // Function to handle the submission of a new list
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetch("http://localhost:3000/lists", {
+    fetch(`${API_URL}/lists`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ name: text }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to create list");
+        }
+        return response.json();
+      })
       .then((data) => {
         setLists((prev) => [...prev, data]);
         setText("");
+        setError(null);
+      })
+      .catch(() => {
+        setError("Could not create list");
       });
   };
 
   // Function to handle the deletion of a list
   const handleDelete = (id: number) => {
-    fetch(`http://localhost:3000/lists/${id}`, {
+    fetch(`${API_URL}/lists/${id}`, {
       method: "DELETE",
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to delete list");
+        }
+        return response.json();
+      })
       .then(() => {
         setLists((prev) => prev.filter((list) => list.id !== id));
+        setError(null);
+      })
+      .catch(() => {
+        setError("Could not delete list");
       });
   };
 
   //Function to handle the editing of a list
   const handleEdit = (id: number) => {
-    fetch(`http://localhost:3000/lists/${id}`, {
+    fetch(`${API_URL}/lists/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ name: editText }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to edit list");
+        }
+        return response.json();
+      })
       .then(() => {
         setLists((prev) =>
           prev.map((list) =>
@@ -86,6 +127,10 @@ export const Listpage: React.FC = () => {
 
         setEditingId(null);
         setEditText("");
+        setError(null);
+      })
+      .catch(() => {
+        setError("Could not edit list");
       });
   };
 
@@ -103,104 +148,109 @@ export const Listpage: React.FC = () => {
       >
         WELCOME TO LISTR
       </Typography>
+      {error && <Typography>{error}</Typography>}
       <Box>
-        <List className="list-container">
-          {lists.map((entry) => {
-            return (
-              <ListItem
-                key={entry.id}
-                onClick={() => navigate("/listitems", { state: entry })}
-                secondaryAction={
-                  <>
-                    {editingId === entry.id ? (
-                      <IconButton
-                        aria-label="save"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(entry.id);
-                        }}
-                        sx={{
-                          color: "#6b4636",
-                          "&:hover": {
-                            backgroundColor: "#fcfad4",
-                          },
-                        }}
-                      >
-                        <CheckIcon />
-                      </IconButton>
-                    ) : (
-                      <IconButton
-                        aria-label="edit"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingId(entry.id);
-                          setEditText(entry.name);
-                        }}
-                        sx={{
-                          color: "#6b4636",
-                          "&:hover": {
-                            backgroundColor: "#fcfad4",
-                          },
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    )}
+        {loading ? (
+          <Typography>Loading...</Typography>
+        ) : (
+          <List className="list-container">
+            {lists.map((entry) => {
+              return (
+                <ListItem
+                  key={entry.id}
+                  onClick={() => navigate("/listitems", { state: entry })}
+                  secondaryAction={
+                    <>
+                      {editingId === entry.id ? (
+                        <IconButton
+                          aria-label="save"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(entry.id);
+                          }}
+                          sx={{
+                            color: "#6b4636",
+                            "&:hover": {
+                              backgroundColor: "#fcfad4",
+                            },
+                          }}
+                        >
+                          <CheckIcon />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          aria-label="edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingId(entry.id);
+                            setEditText(entry.name);
+                          }}
+                          sx={{
+                            color: "#6b4636",
+                            "&:hover": {
+                              backgroundColor: "#fcfad4",
+                            },
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      )}
 
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(entry.id);
-                      }}
-                      sx={{
-                        color: "#6b4636",
-                        "&:hover": {
-                          backgroundColor: "#fcfad4",
-                        },
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </>
-                }
-              >
-                <Box className="list-card-content">
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: "#fcfad4" }}>
-                      <ListAltOutlinedIcon className="list-icon" />
-                    </Avatar>
-                  </ListItemAvatar>
-                  {editingId === entry.id ? (
-                    <TextField
-                      value={editText}
-                      onChange={(e) => {
-                        setEditText(e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <Typography
-                      sx={{
-                        fontSize: 20,
-                        fontWeight: "bold",
-                        letterSpacing: "0.2px",
-                      }}
-                    >
-                      {entry.name}
-                    </Typography>
-                  )}
-                  <Box className="list-item-count">
-                    {entry.itemCount === 1
-                      ? "1 item"
-                      : `${entry.itemCount} items`}
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(entry.id);
+                        }}
+                        sx={{
+                          color: "#6b4636",
+                          "&:hover": {
+                            backgroundColor: "#fcfad4",
+                          },
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </>
+                  }
+                >
+                  <Box className="list-card-content">
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: "#fcfad4" }}>
+                        <ListAltOutlinedIcon className="list-icon" />
+                      </Avatar>
+                    </ListItemAvatar>
+                    {editingId === entry.id ? (
+                      <TextField
+                        value={editText}
+                        onChange={(e) => {
+                          setEditText(e.target.value);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <Typography
+                        sx={{
+                          fontSize: 20,
+                          fontWeight: "bold",
+                          letterSpacing: "0.2px",
+                        }}
+                      >
+                        {entry.name}
+                      </Typography>
+                    )}
+                    <Box className="list-item-count">
+                      {entry.itemCount === 1
+                        ? "1 item"
+                        : `${entry.itemCount} items`}
+                    </Box>
                   </Box>
-                </Box>
-              </ListItem>
-            );
-          })}
-        </List>
+                </ListItem>
+              );
+            })}
+          </List>
+        )}
         <TextField
           label="New List"
           variant="outlined"
