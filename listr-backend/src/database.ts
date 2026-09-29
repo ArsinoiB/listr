@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import fs from "fs";
 
 // Create a new SQLite database connection
-const db = new Database("listr.db");
+const db = new Database(process.env.DATABASE_PATH || "listr.db");
 
 // Enable foreign key constraints in SQLite
 db.pragma("foreign_keys = ON");

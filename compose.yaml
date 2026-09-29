@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./listr-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - listr-db-data:/data
+    environment:
+      DATABASE_PATH: /data/listr.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  frontend:
+    build: ./listr-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  listr-db-data:
+    external: true

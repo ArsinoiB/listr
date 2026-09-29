@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import type { ListEntry } from "../store/types";
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   Container,
   Box,

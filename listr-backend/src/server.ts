@@ -11,6 +11,8 @@ import {
   updateListItem,
 } from "./listRepository.js";
 import cors from "cors";
+import db from "./database.js";
+import morgan from "morgan";
 
 const app = express();
 
@@ -18,10 +20,20 @@ app.use(cors());
 
 app.use(express.json());
 
+// Use morgan to log requests
+app.use(morgan("combined"));
+
 const PORT = 3000;
 
-app.get("/", (_req, res) => {
-  res.send("Hello from Listr backend!");
+////////////////HEALTH API ENDPOINT///////////////////
+app.get("/health", (_req, res) => {
+  try {
+    db.prepare("SELECT 1").get();
+
+    res.json({ status: "ok" });
+  } catch {
+    res.status(503).json({ status: "unhealthy" });
+  }
 });
 
 ////////////////////  LISTS API ENDPOINTS  ////////////////////

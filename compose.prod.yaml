@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./listr-backend
+      dockerfile: Dockerfile.prod
+    volumes:
+      - listr-db-data:/data
+    environment:
+      DATABASE_PATH: /data/listr.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  frontend:
+    build:
+      context: ./listr-frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "5174:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  listr-db-data:
+    external: true
